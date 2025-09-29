@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">FuPlay</string>
+    <string name="app_name">FluPlay</string>
     <string name="select_video">Select Video</string>
     <string name="no_video_selected">No video selected</string>
     <string name="no_videos_found">No videos found on device</string>
