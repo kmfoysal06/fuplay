@@ -1,9 +1,12 @@
 package com.fuplay.videoplayer
 
+import android.os.Handler
+import android.os.Looper
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.ViewGroup
+import android.widget.SeekBar
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
@@ -60,10 +63,20 @@ class VideoPlayerAdapter(
         private var exoPlayer: ExoPlayer? = null
         private lateinit var gestureDetector: GestureDetector
         private var isPlayerInitialized = false
+        private val progressHandler = Handler(Looper.getMainLooper())
+        private var isUserSeeking = false
+
+        private val updateProgressRunnable = object : Runnable {
+            override fun run() {
+                updateProgress()
+                progressHandler.postDelayed(this, 100) // Update every 100ms
+            }
+        }
 
         fun bind(video: VideoFile, position: Int) {
             setupGestureDetector()
             setupTapOverlay()
+            setupProgressBar()
             initializePlayer(video)
         }
 
@@ -83,6 +96,30 @@ class VideoPlayerAdapter(
             }
         }
 
+        private fun setupProgressBar() {
+            binding.progressBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (fromUser) {
+                        exoPlayer?.let { player ->
+                            val duration = player.duration
+                            if (duration > 0) {
+                                val seekPosition = (progress * duration) / 100
+                                player.seekTo(seekPosition)
+                            }
+                        }
+                    }
+                }
+
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                    isUserSeeking = true
+                }
+
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                    isUserSeeking = false
+                }
+            })
+        }
+
         private fun initializePlayer(video: VideoFile) {
             if (isPlayerInitialized) return
             
@@ -94,15 +131,59 @@ class VideoPlayerAdapter(
                 val mediaItem = MediaItem.fromUri(video.uri)
                 player.setMediaItem(mediaItem)
                 player.playWhenReady = false // Don't auto-play
+                player.repeatMode = Player.REPEAT_MODE_ONE // Loop video
                 player.prepare()
                 
                 player.addListener(object : Player.Listener {
                     override fun onPlayerError(error: PlaybackException) {
                         // Handle error silently to avoid disrupting user experience
                     }
+
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        when (playbackState) {
+                            Player.STATE_READY -> {
+                                // Player is ready, start progress updates
+                                startProgressUpdates()
+                            }
+                            Player.STATE_ENDED -> {
+                                // Video ended, will automatically loop due to REPEAT_MODE_ONE
+                            }
+                        }
+                    }
+
+                    override fun onIsPlayingChanged(isPlaying: Boolean) {
+                        if (isPlaying) {
+                            startProgressUpdates()
+                        } else {
+                            stopProgressUpdates()
+                        }
+                    }
                 })
             }
             isPlayerInitialized = true
+        }
+
+        private fun updateProgress() {
+            if (!isUserSeeking) {
+                exoPlayer?.let { player ->
+                    val duration = player.duration
+                    val currentPosition = player.currentPosition
+                    
+                    if (duration > 0) {
+                        val progress = ((currentPosition * 100) / duration).toInt()
+                        binding.progressBar.progress = progress
+                    }
+                }
+            }
+        }
+
+        private fun startProgressUpdates() {
+            stopProgressUpdates()
+            progressHandler.post(updateProgressRunnable)
+        }
+
+        private fun stopProgressUpdates() {
+            progressHandler.removeCallbacks(updateProgressRunnable)
         }
 
         private fun togglePlayPause() {
@@ -117,13 +198,16 @@ class VideoPlayerAdapter(
 
         fun pausePlayer() {
             exoPlayer?.pause()
+            stopProgressUpdates()
         }
 
         fun playPlayer() {
             exoPlayer?.play()
+            startProgressUpdates()
         }
 
         fun releasePlayer() {
+            stopProgressUpdates()
             exoPlayer?.let { player ->
                 player.release()
                 exoPlayer = null
