@@ -22,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var folderAdapter: VideoFolderAdapter
     private val videoFolders = mutableListOf<VideoFolder>()
+    private val allVideos = mutableListOf<VideoFile>()
     
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -77,6 +78,9 @@ class MainActivity : AppCompatActivity() {
             val folders = groupVideosByFolder(videos)
             
             withContext(Dispatchers.Main) {
+                allVideos.clear()
+                allVideos.addAll(videos)
+                
                 videoFolders.clear()
                 videoFolders.addAll(folders)
                 folderAdapter.notifyDataSetChanged()
@@ -164,8 +168,10 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun playVideo(video: VideoFile) {
+        val currentIndex = allVideos.indexOf(video)
         val intent = Intent(this, VideoPlayerActivity::class.java).apply {
-            putExtra("VIDEO_URI", video.uri.toString())
+            putParcelableArrayListExtra("ALL_VIDEOS", ArrayList(allVideos))
+            putExtra("CURRENT_INDEX", currentIndex)
         }
         startActivity(intent)
     }
