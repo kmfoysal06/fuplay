@@ -2,9 +2,13 @@
     <string name="app_name">FuPlay</string>
     <string name="select_video">Select Video</string>
     <string name="no_video_selected">No video selected</string>
+    <string name="no_videos_found">No videos found on device</string>
     <string name="permission_required">Storage permission is required to access videos</string>
     <string name="grant_permission">Grant Permission</string>
     <string name="error_loading_video">Error loading video</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
+    <string name="loading_videos">Loading videos...</string>
+    <string name="folder_expanded">Folder expanded</string>
+    <string name="folder_collapsed">Folder collapsed</string>
 </resources>
