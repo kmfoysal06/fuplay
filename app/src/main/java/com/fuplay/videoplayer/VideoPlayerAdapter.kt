@@ -131,7 +131,7 @@ class VideoPlayerAdapter(
                 val mediaItem = MediaItem.fromUri(video.uri)
                 player.setMediaItem(mediaItem)
                 player.playWhenReady = false // Don't auto-play
-                player.repeatMode = Player.REPEAT_MODE_ONE // Loop video
+                player.repeatMode = Player.REPEAT_MODE_OFF // No automatic repeat
                 player.prepare()
                 
                 player.addListener(object : Player.Listener {
@@ -146,7 +146,10 @@ class VideoPlayerAdapter(
                                 startProgressUpdates()
                             }
                             Player.STATE_ENDED -> {
-                                // Video ended, will automatically loop due to REPEAT_MODE_ONE
+                                // Video ended, restart but keep paused
+                                player.seekTo(0)
+                                player.playWhenReady = false
+                                player.prepare()
                             }
                         }
                     }

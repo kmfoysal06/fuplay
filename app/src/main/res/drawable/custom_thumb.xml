@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Thumb when pressed/dragging -->
+    <!-- Thumb when pressed/dragging - keep same size -->
     <item android:state_pressed="true">
         <shape android:shape="oval">
             <solid android:color="@color/purple_500" />
-            <size android:width="16dp" android:height="16dp" />
+            <size android:width="10dp" android:height="10dp" />
         </shape>
     </item>
-    <!-- Thumb when focused -->
+    <!-- Thumb when focused - keep same size -->
     <item android:state_focused="true">
         <shape android:shape="oval">
             <solid android:color="@color/purple_500" />
-            <size android:width="16dp" android:height="16dp" />
+            <size android:width="10dp" android:height="10dp" />
         </shape>
     </item>
-    <!-- Default thumb (smaller) -->
+    <!-- Default thumb - consistent size -->
     <item>
         <shape android:shape="oval">
             <solid android:color="@color/purple_500" />
-            <size android:width="8dp" android:height="8dp" />
+            <size android:width="10dp" android:height="10dp" />
         </shape>
     </item>
 </selector>
