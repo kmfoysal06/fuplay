@@ -134,7 +134,7 @@ class MainActivity : AppCompatActivity() {
                 // Extract folder name from file path
                 val folderName = getFolderNameFromPath(data)
                 
-                videos.add(VideoFile(id, name, uri, size, duration, folderName))
+                videos.add(VideoFile(id, name, uri, size, duration, folderName, data))
             }
         }
         

@@ -11,7 +11,8 @@ data class VideoFile(
     val uri: Uri,
     val size: Long,
     val duration: Long,
-    val folderName: String
+    val folderName: String,
+    val path: String?
 ) : Parcelable
 
 data class VideoFolder(

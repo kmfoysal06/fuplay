@@ -1,5 +1,6 @@
 package com.fuplay.videoplayer
 
+import android.os.Build
 import android.graphics.Bitmap
 import android.media.ThumbnailUtils
 import android.provider.MediaStore
@@ -8,6 +9,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.fuplay.videoplayer.databinding.ItemVideoFolderBinding
 import kotlinx.coroutines.*
+import java.io.File
 
 class VideoFolderAdapter(
     private val folders: List<VideoFolder>,
@@ -50,10 +52,27 @@ class VideoFolderAdapter(
             scope.launch {
                 try {
                     val thumbnail = withContext(Dispatchers.IO) {
-                        ThumbnailUtils.createVideoThumbnail(
-                            video.uri.path ?: "",
-                            MediaStore.Images.Thumbnails.MINI_KIND
-                        )
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            // For Android 10+ use the new API
+                            val resolver = binding.root.context.contentResolver
+                            try {
+                                resolver.loadThumbnail(video.uri, android.util.Size(320, 240), null)
+                            } catch (e: Exception) {
+                                null
+                            }
+                        } else {
+                            // For older versions, try to get file path
+                            val filePath = video.path ?: video.uri.path
+                            if (filePath != null && File(filePath).exists()) {
+                                @Suppress("DEPRECATION")
+                                ThumbnailUtils.createVideoThumbnail(
+                                    filePath,
+                                    MediaStore.Images.Thumbnails.MINI_KIND
+                                )
+                            } else {
+                                null
+                            }
+                        }
                     }
                     
                     thumbnail?.let {
