@@ -47,22 +47,36 @@ class VideoPlayerActivity : AppCompatActivity() {
                 
                 // Pause all other videos and play current one
                 pauseAllVideosExcept(position)
+                
+                // Start playing the current video
+                adapter.playVideo(position)
             }
         })
+        
+        // Start playing the initial video
+        binding.viewPager.post {
+            adapter.playVideo(currentIndex)
+        }
     }
     
     private fun pauseAllVideosExcept(currentPosition: Int) {
-        // This would be more complex in a real implementation
-        // For now, we rely on ViewPager2's recycling mechanism
+        adapter.pauseAllExcept(currentPosition)
     }
     
     override fun onPause() {
         super.onPause()
         // Pause current video when activity is paused
+        adapter.pauseVideo(currentIndex)
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Resume current video when activity is resumed
+        adapter.playVideo(currentIndex)
     }
     
     override fun onDestroy() {
         super.onDestroy()
-        // Clean up resources
+        // Clean up resources - adapter will handle individual player cleanup
     }
 }

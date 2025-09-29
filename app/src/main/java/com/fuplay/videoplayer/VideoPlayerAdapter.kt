@@ -16,6 +16,8 @@ class VideoPlayerAdapter(
     private val context: VideoPlayerActivity
 ) : RecyclerView.Adapter<VideoPlayerAdapter.VideoViewHolder>() {
 
+    private val viewHolders = mutableMapOf<Int, VideoViewHolder>()
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VideoViewHolder {
         val binding = ItemVideoPlayerBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
@@ -24,18 +26,42 @@ class VideoPlayerAdapter(
     }
 
     override fun onBindViewHolder(holder: VideoViewHolder, position: Int) {
-        holder.bind(videos[position])
+        viewHolders[position] = holder
+        holder.bind(videos[position], position)
+    }
+
+    override fun onViewRecycled(holder: VideoViewHolder) {
+        super.onViewRecycled(holder)
+        holder.releasePlayer()
+        viewHolders.values.removeAll { it == holder }
     }
 
     override fun getItemCount(): Int = videos.size
+
+    fun pauseAllExcept(currentPosition: Int) {
+        viewHolders.forEach { (position, holder) ->
+            if (position != currentPosition) {
+                holder.pausePlayer()
+            }
+        }
+    }
+
+    fun playVideo(position: Int) {
+        viewHolders[position]?.playPlayer()
+    }
+
+    fun pauseVideo(position: Int) {
+        viewHolders[position]?.pausePlayer()
+    }
 
     inner class VideoViewHolder(private val binding: ItemVideoPlayerBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         private var exoPlayer: ExoPlayer? = null
         private lateinit var gestureDetector: GestureDetector
+        private var isPlayerInitialized = false
 
-        fun bind(video: VideoFile) {
+        fun bind(video: VideoFile, position: Int) {
             setupGestureDetector()
             setupTapOverlay()
             initializePlayer(video)
@@ -58,6 +84,8 @@ class VideoPlayerAdapter(
         }
 
         private fun initializePlayer(video: VideoFile) {
+            if (isPlayerInitialized) return
+            
             releasePlayer()
             
             exoPlayer = ExoPlayer.Builder(context).build().also { player ->
@@ -65,7 +93,7 @@ class VideoPlayerAdapter(
                 
                 val mediaItem = MediaItem.fromUri(video.uri)
                 player.setMediaItem(mediaItem)
-                player.playWhenReady = true
+                player.playWhenReady = false // Don't auto-play
                 player.prepare()
                 
                 player.addListener(object : Player.Listener {
@@ -74,6 +102,7 @@ class VideoPlayerAdapter(
                     }
                 })
             }
+            isPlayerInitialized = true
         }
 
         private fun togglePlayPause() {
@@ -99,6 +128,7 @@ class VideoPlayerAdapter(
                 player.release()
                 exoPlayer = null
             }
+            isPlayerInitialized = false
         }
     }
 }
