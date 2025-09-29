@@ -1,17 +1,18 @@
 package com.fuplay.videoplayer
 
+import android.graphics.Bitmap
+import android.media.ThumbnailUtils
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.fuplay.videoplayer.databinding.ItemVideoFolderBinding
+import kotlinx.coroutines.*
 
 class VideoFolderAdapter(
     private val folders: List<VideoFolder>,
-    private val onVideoClick: (VideoFile) -> Unit
+    private val onFolderClick: (VideoFolder) -> Unit
 ) : RecyclerView.Adapter<VideoFolderAdapter.FolderViewHolder>() {
-
-    private val expandedFolders = mutableSetOf<String>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FolderViewHolder {
         val binding = ItemVideoFolderBinding.inflate(
@@ -29,31 +30,39 @@ class VideoFolderAdapter(
     inner class FolderViewHolder(private val binding: ItemVideoFolderBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
+        private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
         fun bind(folder: VideoFolder) {
-            binding.tvFolderName.text = "${folder.name} (${folder.videos.size})"
+            binding.tvFolderName.text = folder.name
+            binding.tvVideoCount.text = "${folder.videos.size} videos"
             
-            val isExpanded = expandedFolders.contains(folder.name)
-            
-            if (isExpanded) {
-                binding.rvVideos.visibility = android.view.View.VISIBLE
-                setupVideoRecyclerView(folder.videos)
-            } else {
-                binding.rvVideos.visibility = android.view.View.GONE
+            // Load thumbnail for the first video in the folder
+            if (folder.videos.isNotEmpty()) {
+                loadThumbnail(folder.videos[0])
             }
 
-            binding.tvFolderName.setOnClickListener {
-                if (isExpanded) {
-                    expandedFolders.remove(folder.name)
-                } else {
-                    expandedFolders.add(folder.name)
-                }
-                notifyItemChanged(adapterPosition)
+            binding.root.setOnClickListener {
+                onFolderClick(folder)
             }
         }
 
-        private fun setupVideoRecyclerView(videos: List<VideoFile>) {
-            binding.rvVideos.layoutManager = LinearLayoutManager(binding.root.context)
-            binding.rvVideos.adapter = VideoAdapter(videos, onVideoClick)
+        private fun loadThumbnail(video: VideoFile) {
+            scope.launch {
+                try {
+                    val thumbnail = withContext(Dispatchers.IO) {
+                        ThumbnailUtils.createVideoThumbnail(
+                            video.uri.path ?: "",
+                            MediaStore.Images.Thumbnails.MINI_KIND
+                        )
+                    }
+                    
+                    thumbnail?.let {
+                        binding.ivThumbnail.setImageBitmap(it)
+                    }
+                } catch (e: Exception) {
+                    // If thumbnail loading fails, keep the default background
+                }
+            }
         }
     }
 }

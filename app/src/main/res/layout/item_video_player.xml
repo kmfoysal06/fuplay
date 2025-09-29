@@ -16,19 +16,23 @@
         app:use_controller="false"
         app:auto_show="false" />
 
-    <!-- Custom progress bar at bottom -->
+    <!-- Enhanced progress bar with better touch area -->
     <SeekBar
         android:id="@+id/progressBar"
         android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:layout_marginBottom="16dp"
+        android:layout_height="32dp"
+        android:layout_marginBottom="8dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:progressTint="@color/purple_500"
         android:thumbTint="@color/purple_500"
-        android:progressBackgroundTint="@color/white"
+        android:progressBackgroundTint="#40FFFFFF"
+        android:secondaryProgressTint="#60FFFFFF"
         android:splitTrack="false"
         android:background="@android:color/transparent"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp"
+        android:thumb="@drawable/custom_thumb"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

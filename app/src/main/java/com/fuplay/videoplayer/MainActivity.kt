@@ -45,8 +45,8 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun setupRecyclerView() {
-        folderAdapter = VideoFolderAdapter(videoFolders) { video ->
-            playVideo(video)
+        folderAdapter = VideoFolderAdapter(videoFolders) { folder ->
+            playVideosFromFolder(folder)
         }
         binding.rvVideoFolders.layoutManager = LinearLayoutManager(this)
         binding.rvVideoFolders.adapter = folderAdapter
@@ -167,11 +167,11 @@ class MainActivity : AppCompatActivity() {
         return folderMap.values.sortedBy { it.name }
     }
     
-    private fun playVideo(video: VideoFile) {
-        val currentIndex = allVideos.indexOf(video)
+    private fun playVideosFromFolder(folder: VideoFolder) {
+        // Only pass videos from the selected folder, not all videos
         val intent = Intent(this, VideoPlayerActivity::class.java).apply {
-            putParcelableArrayListExtra("ALL_VIDEOS", ArrayList(allVideos))
-            putExtra("CURRENT_INDEX", currentIndex)
+            putParcelableArrayListExtra("ALL_VIDEOS", ArrayList(folder.videos))
+            putExtra("CURRENT_INDEX", 0) // Start with first video in folder
         }
         startActivity(intent)
     }
