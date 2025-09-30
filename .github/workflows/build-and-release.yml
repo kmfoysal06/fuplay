@@ -1,6 +1,6 @@
 name: Build and Release APK
 
-# Give workflow permission to push tags and create releases
+# Allow workflow to push tags and create releases
 permissions:
   contents: write
 
@@ -10,7 +10,7 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:   # allow manual trigger
+  workflow_dispatch:   # manual trigger
 
 jobs:
   build:
@@ -42,7 +42,7 @@ jobs:
     - name: Build release APK
       run: ./gradlew assembleRelease
 
-    - name: Upload release APK
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: fuplay-release
@@ -59,23 +59,23 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Download built APK
+    - name: Download APK artifact
       uses: actions/download-artifact@v4
       with:
         name: fuplay-release
         path: ./release-apk
 
-    - name: Create tag for manual run
+    - name: Create unique tag for manual run
       if: github.event_name == 'workflow_dispatch'
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        TAG="manual-${GITHUB_RUN_NUMBER}"
+        TAG="manual-$(date +%Y%m%d%H%M%S)"
         echo "TAG=$TAG" >> $GITHUB_ENV
         git tag $TAG
         git push origin $TAG
 
-    - name: Set version variable
+    - name: Determine version
       id: get_version
       run: |
         if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
@@ -84,7 +84,7 @@ jobs:
           echo "VERSION=${TAG}" >> $GITHUB_OUTPUT
         fi
 
-    - name: Create Release
+    - name: Create GitHub release
       id: create_release
       uses: softprops/action-gh-release@v2
       with:
@@ -101,7 +101,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload Release APK
+    - name: Upload APK to release
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.get_version.outputs.VERSION }}
