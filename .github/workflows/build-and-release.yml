@@ -50,10 +50,6 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -64,59 +60,34 @@ jobs:
         name: fuplay-release
         path: ./release-apk
 
-    - name: Create unique tag for manual run
-      if: github.event_name == 'workflow_dispatch'
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        TAG="manual-${GITHUB_RUN_NUMBER}"
-        echo "TAG=$TAG" >> $GITHUB_ENV
-        git tag $TAG
-        git push origin $TAG
-
-    - name: Determine version
+    - name: Set version / create tag for manual run
       id: get_version
       run: |
         if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          # Tag push
+          VERSION=${GITHUB_REF#refs/tags/}
         else
-          echo "VERSION=${TAG}" >> $GITHUB_OUTPUT
+          # Manual run -> create unique tag
+          VERSION="manual-${GITHUB_RUN_NUMBER}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag $VERSION
+          git push origin $VERSION
         fi
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-    - name: Check if release exists
-      id: check_release
-      run: |
-        gh release view "${{ steps.get_version.outputs.VERSION }}" || echo "not_exists" > release_status.txt
-        if [[ -f release_status.txt ]]; then
-          echo "EXISTS=false" >> $GITHUB_ENV
-        else
-          echo "EXISTS=true" >> $GITHUB_ENV
-        fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Create release if missing
-      if: env.EXISTS == 'true'
+    - name: Create release & upload APK
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.get_version.outputs.VERSION }}
         name: FuPlay ${{ steps.get_version.outputs.VERSION }}
+        files: ./release-apk/app-release.apk
         body: |
           ## Changes in this Release
           - Build triggered by ${{ github.event_name }}
-
+          
           ## Installation
-          Download the APK file and install it on your Android device.
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload APK to release
-      if: env.EXISTS == 'true'
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ steps.get_version.outputs.VERSION }}
-        files: ./release-apk/app-release.apk
+          Download the APK and install on your Android device.
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
