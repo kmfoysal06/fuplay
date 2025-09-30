@@ -1,8 +1,7 @@
 name: Build and Release APK
 
-# Allow workflow to push tags and create releases
 permissions:
-  contents: write
+  contents: write  # allows pushing tags and creating releases
 
 on:
   push:
@@ -10,7 +9,7 @@ on:
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:   # manual trigger
+  workflow_dispatch:  # manual trigger
 
 jobs:
   build:
@@ -70,7 +69,7 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        TAG="manual-$(date +%Y%m%d%H%M%S)"
+        TAG="manual-${GITHUB_RUN_NUMBER}"
         echo "TAG=$TAG" >> $GITHUB_ENV
         git tag $TAG
         git push origin $TAG
@@ -84,8 +83,20 @@ jobs:
           echo "VERSION=${TAG}" >> $GITHUB_OUTPUT
         fi
 
-    - name: Create GitHub release
-      id: create_release
+    - name: Check if release exists
+      id: check_release
+      run: |
+        gh release view "${{ steps.get_version.outputs.VERSION }}" || echo "not_exists" > release_status.txt
+        if [[ -f release_status.txt ]]; then
+          echo "EXISTS=false" >> $GITHUB_ENV
+        else
+          echo "EXISTS=true" >> $GITHUB_ENV
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create release if missing
+      if: env.EXISTS == 'true'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.get_version.outputs.VERSION }}
@@ -102,6 +113,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload APK to release
+      if: env.EXISTS == 'true'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.get_version.outputs.VERSION }}
