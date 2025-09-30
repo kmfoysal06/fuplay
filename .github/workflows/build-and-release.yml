@@ -1,12 +1,16 @@
 name: Build and Release APK
 
+# Give workflow permission to push tags and create releases
+permissions:
+  contents: write
+
 on:
   push:
     branches: [ main ]
     tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:   # 👈 allow manual trigger
+  workflow_dispatch:   # allow manual trigger
 
 jobs:
   build:
