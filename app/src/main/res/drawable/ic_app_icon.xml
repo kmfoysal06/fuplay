@@ -19,8 +19,8 @@
     <!-- "kmf" text as vector path (approximate, small at bottom right) -->
     <!-- This path draws a tiny "kmf". You can adjust scale/position as needed. -->
     <group
-        android:scaleX="0.6"
-        android:scaleY="0.6"
+        android:scaleX="0.8"
+        android:scaleY="0.8"
         android:translateX="15"
         android:translateY="18">
         <path
