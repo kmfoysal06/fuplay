@@ -61,13 +61,23 @@ jobs:
         name: fuplay-release
         path: ./release-apk
 
-    - name: Get version
+    - name: Create tag for manual run
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        TAG="manual-${GITHUB_RUN_NUMBER}"
+        echo "TAG=$TAG" >> $GITHUB_ENV
+        git tag $TAG
+        git push origin $TAG
+
+    - name: Set version variable
       id: get_version
       run: |
         if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
           echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
         else
-          echo "VERSION=manual-${GITHUB_RUN_NUMBER}" >> $GITHUB_OUTPUT
+          echo "VERSION=${TAG}" >> $GITHUB_OUTPUT
         fi
 
     - name: Create Release
